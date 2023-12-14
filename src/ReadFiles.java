@@ -95,10 +95,10 @@ public class ReadFiles {
 
     public static void main(String[] args) {
 //        List<FD> fds = new ArrayList<>();
-//        fds = ReadFiles.readFDs("src\\\\FDs.txt");
+//        fds = ReadFiles.readFDs("examples\\\\FDs.txt");
 //        System.out.println(fds.get(3));
 //        List<List<String>> decompositions = new ArrayList<>();
-//        decompositions = ReadFiles.readDecompositions("src\\\\decompositions.txt");
+//        decompositions = ReadFiles.readDecompositions("examples\\\\decompositions.txt");
 //        for (List<String> temp : decompositions) {
 //            for (String s : temp) {
 //                System.out.println(s);
@@ -106,7 +106,7 @@ public class ReadFiles {
 //            System.out.println("------------------------------------");
 //        }
         List<String> attributes = new ArrayList<>();
-        attributes = ReadFiles.readAttributes("src\\\\attributes.txt");
+        attributes = ReadFiles.readAttributes("examples\\\\attributes.txt");
         for (String attribute : attributes) {
             System.out.println(attribute);
         }
