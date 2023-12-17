@@ -53,7 +53,7 @@ public class ConstValue extends Data {
 
 
     @Override
-    // TODO:编写逻辑来设定什么情况下算常量值相等？
+    // TODO:编写逻辑来设定什么情况下算常量值相等？(数据库同一列中 14 和 14.0 是否相等？)
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
