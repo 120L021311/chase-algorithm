@@ -1,4 +1,3 @@
-import javafx.scene.control.Labeled;
 import org.junit.Test;
 
 import java.util.*;
@@ -18,6 +17,9 @@ public class LosslessJoin {
         return fds;
     }
 
+    /**
+     * 根据文件输入初始化table
+     */
     @SuppressWarnings({"all"})
     public static void setupTable() {
         fds = ReadFiles.readFDs(fd_fileName);
@@ -58,7 +60,10 @@ public class LosslessJoin {
         }
     }
 
-    // TODO:将往changes集合中添加项的代码转变为对 normalizeMapping()、combineMapping() 等函数的调用
+    /**
+     * 对于 table 应用一个函数依赖 FD 的 chase step
+     * @param fd 函数依赖 FD
+     */
     public static void chaseStep(FD fd) {
         List<Integer> leftIndex = new ArrayList<>();
         List<String> leftAttributes = fd.getLeft();
@@ -180,7 +185,10 @@ public class LosslessJoin {
         return result;
     }
 
-
+    /**
+     * 根据文件输入判断对于给定的关系模式的分解是否为无损连接分解
+     * @return 是返回 true，否则返回 false
+     */
     public static boolean standard_chase_for_losslessJoin_check() {
         LosslessJoin.setupTable();
         List<FD> fds = LosslessJoin.getFds();
@@ -190,6 +198,10 @@ public class LosslessJoin {
         return LosslessJoin.isLosslessJoin();
     }
 
+    /**
+     * 检查 table 中是否存在一行，其属性值全为 ConstValue，从而判断分解是否是无损连接分解
+     * @return 存在则返回 true，否则返回 false
+     */
     public static boolean isLosslessJoin() {
         for (int i = 0; i < table.length; i++) {
             boolean flag = true;
@@ -206,6 +218,10 @@ public class LosslessJoin {
         return false;
     }
 
+    /**
+     * 将某轮 chase step 后应该对 table 进行的修改作用到 table 上
+     * @param changes 本轮应该对 table 进行修改的映射关系
+     */
     public static void changeTable(Map<LabeledNull, Data> changes) {
         for (int i = 0; i < 5; i++) {
             for (int j = 0; j < 5; j++) {
@@ -222,5 +238,5 @@ public class LosslessJoin {
 }
 
 //TODO：1.目前编写的方法只能处理函数依赖右侧只有一个属性值的情况，如果右侧为有多个属性的属性列表如何处理？是否是多值依赖？(查多值依赖的定义)
-//      2.目前的输入格式过于简单，考虑怎样修改能够处理看起来像数据库中符号的输入？————>学习使用正则表达式
-
+//      2.尝试考虑处理约束的 body 或 head 中有多个 relationalAtom 的情况
+//      3.尝试设计管理 body 和 head 都只有一个 relationalAtom 的 TGD

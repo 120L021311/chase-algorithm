@@ -1,5 +1,5 @@
-A,D
-A,B
-B,E
-C,D,E
-A,E
+R1(A,D)
+R2(A,B)
+R3(B,E)
+R4(C,D,E)
+R5(A,E)
