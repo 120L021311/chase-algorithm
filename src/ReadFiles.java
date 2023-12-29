@@ -14,7 +14,9 @@ import java.util.regex.Pattern;
  */
 public class ReadFiles {
     private static final String regexForFD = "^(?<leftAttributeList>[^-]+)->(?<rightAttributeList>.+)$"; // FD类型输入格式的正则表达式
-    private static final String regexForRelationalAtoms = "^(?<relationName>[^(]+)\\((?<attributeList>[^)]+)\\)$"; // 关系原子类型输入格式的正则表达式，例：R(A,B,C,D,E) 或 R1(A,D)
+    private static final String regexForRelationalAtoms = "^(?<relationName>[^(]+)\\((?<variableList>[^)]+)\\)$"; // 关系原子类型输入格式的正则表达式，例：R(A,B,C,D,E) 或 R1(A,D)
+    private static final String regexForTGD = "^(?<bodyAtoms>[^-]+)->(?<headAtoms>.+)$"; // TGD类型输入格式的正则表达式
+
 
     /**
      * 读入函数依赖集合文件，并保存在集合中
@@ -70,7 +72,7 @@ public class ReadFiles {
      * @return 对应的关系名称
      */
     public static String getRelationNameFromRelationalAtom(String relationalAtom) {
-        HashMap<String, List<String>> map = ReadFiles.parseRelationalAtom(relationalAtom);
+        HashMap<String, List<Variable>> map = ReadFiles.parseRelationalAtom(relationalAtom);
         ArrayList<String> temp = new ArrayList<>(map.keySet());
         return temp.get(0);
     }
@@ -81,9 +83,9 @@ public class ReadFiles {
      * @param relationalAtom 输入的 relationalAtom
      * @return 关系对应的属性列表
      */
-    public static List<String> getAttributeListFromRelationalAtom(String relationalAtom) {
-        HashMap<String, List<String>> map = ReadFiles.parseRelationalAtom(relationalAtom);
-        ArrayList<List<String>> temp = new ArrayList<>(map.values());
+    public static List<Variable> getVariableListFromRelationalAtom(String relationalAtom) {
+        HashMap<String, List<Variable>> map = ReadFiles.parseRelationalAtom(relationalAtom);
+        ArrayList<List<Variable>> temp = new ArrayList<>(map.values());
         return temp.get(0);
     }
 
@@ -93,15 +95,20 @@ public class ReadFiles {
      * @param relationalAtom 一个 relationalAtom ，对于无损连接性判断相关输入文件为文件中的一行
      * @return 键值对 (关系名，关系的属性名列表(属性之间用逗号分隔))
      */
-    public static HashMap<String, List<String>> parseRelationalAtom(String relationalAtom) {
+    public static HashMap<String, List<Variable>> parseRelationalAtom(String relationalAtom) {
         Pattern pattern = Pattern.compile(regexForRelationalAtoms);
         Matcher matcher = pattern.matcher(relationalAtom);
-        HashMap<String, List<String>> map = new HashMap<>();
+        HashMap<String, List<Variable>> map = new HashMap<>();
+        List<Variable> variableList = new ArrayList<>();
 
         if (matcher.matches()) {
             String relationName = matcher.group("relationName");
-            List<String> attributeList = new ArrayList<>(Arrays.asList(matcher.group("attributeList").split(",")));
-            map.put(relationName, attributeList);
+            List<String> variableNameList = new ArrayList<>(Arrays.asList(matcher.group("variableList").split(",")));
+            for (String variableName : variableNameList) {
+                Variable variable = new Variable(variableName);
+                variableList.add(variable);
+            }
+            map.put(relationName, variableList);
         }
 
         return map;
@@ -122,7 +129,11 @@ public class ReadFiles {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
 //                String[] attributes = line.split(",");
-                List<String> attributes = ReadFiles.getAttributeListFromRelationalAtom(line);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(line);
+                List<String> attributes = new ArrayList<>();
+                for (Variable variable : variableList) {
+                    attributes.add(variable.getName());
+                }
                 ret.add(attributes);
             }
         } catch (IOException e) {
@@ -148,12 +159,82 @@ public class ReadFiles {
      */
     public static List<String> readAttributes(String fileName) {
         BufferedReader bufferedReader = null;
-        List<String> ret = null;
+        List<String> ret = new ArrayList<>();
         try {
             bufferedReader = new BufferedReader(new FileReader(fileName));
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                ret = ReadFiles.getAttributeListFromRelationalAtom(line);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(line);
+                for (Variable variable : variableList) {
+                    ret.add(variable.getName());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * 对于字符串形式的 TGD 进行解析，提取 TGD 中的信息并创建 TGD 对象
+     * @param TGDString 字符串形式的 TGD
+     * @return 创建的 TGD 对象
+     */
+    public static TGD parseTGD(String TGDString) {
+        Pattern pattern = Pattern.compile(regexForTGD);
+        Matcher matcher = pattern.matcher(TGDString);
+
+        List<RelationalAtom> body = new ArrayList<>();
+        List<RelationalAtom> head = new ArrayList<>();
+
+        if (matcher.matches()) {
+            String bodyAtoms = matcher.group("bodyAtoms");
+            String headAtoms = matcher.group("headAtoms");
+            String[] bodyAtomStrings = bodyAtoms.split("and");
+            for (String bodyAtomString : bodyAtomStrings) {
+                bodyAtomString = bodyAtomString.trim();
+                String relationName = ReadFiles.getRelationNameFromRelationalAtom(bodyAtomString);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(bodyAtomString);
+                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
+                body.add(relationalAtom);
+            }
+            String[] headAtomStrings = headAtoms.split("and");
+            for (String headAtomString : headAtomStrings) {
+                headAtomString = headAtomString.trim();
+                String relationName = ReadFiles.getRelationNameFromRelationalAtom(headAtomString);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(headAtomString);
+                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
+                head.add(relationalAtom);
+            }
+        }
+
+        TGD tgd = new TGD(body, head);
+        return tgd;
+    }
+
+    /**
+     * 从文件输入中读取 TGD (文件中一行为一条 TGD)
+     * @param fileName 保存 TGD 的文件路径
+     * @return TGD集合
+     */
+    public static List<TGD> readTGDs(String fileName) {
+        BufferedReader bufferedReader = null;
+        List<TGD> ret = new ArrayList<>();
+
+        try {
+            bufferedReader = new BufferedReader(new FileReader(fileName));
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                TGD tgd = ReadFiles.parseTGD(line);
+                ret.add(tgd);
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -44,6 +44,6 @@ public class FD {
         }
         rightString.append(right.get(right.size() - 1));
 
-        return leftString + "->" + rightString;
+        return leftString + "->" + rightString + "\n";
     }
 }

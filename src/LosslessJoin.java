@@ -4,13 +4,13 @@ import java.util.*;
 
 public class LosslessJoin {
     static Data[][] table;
-    static String fd_fileName = "examples\\\\FDs.txt";
+    static String fd_fileName = "examples/FD/FDs.txt";
     static List<FD> fds = new ArrayList<>();
-    static String attributes_fileName = "examples\\\\attributes.txt";
+    static String attributes_fileName = "examples/FD/attributes.txt";
     static List<String> attributes; // 用来保存属性名的有序列表，一个属性对应table表格中的一列
     static List<ConstValue> constValues = new ArrayList<>(); // 用来保存属性名对应的常量值(与属性名顺序对应)
     static Map<String, Integer> attributeName_to_index = new HashMap<>(); // 用来保存属性名和对应的列的下标
-    static String decomposition_fileName = "examples\\\\decompositions.txt";
+    static String decomposition_fileName = "examples/FD/decompositions.txt";
     static List<List<String>> decompositions; // 保存关系模式的分解，一个分解对应table表格中的一行
 
     public static List<FD> getFds() {

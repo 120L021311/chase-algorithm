@@ -6,7 +6,7 @@ import java.util.Objects;
  * 设定：1.ConstValue对象小于LabeledNull对象
  *      2.LabelNull之间对象之间的比较是对于下标的比较，下标较小的小
  */
-public class LabeledNull extends Data{
+public class LabeledNull extends Value{
     private static int nextSubscript = 1;
     private int subscript;
 

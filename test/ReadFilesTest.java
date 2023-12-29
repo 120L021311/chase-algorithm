@@ -18,10 +18,10 @@ public class ReadFilesTest {
     @Test
     public void testParseRelationalAtom() {
 //        HashMap<String, List<String>> map = ReadFiles.parseRelationalAtom("R(A,B,C,D,E)");
-        HashMap<String, List<String>> map = ReadFiles.parseRelationalAtom("R4(C,D,E)");
+        HashMap<String, List<Variable>> map = ReadFiles.parseRelationalAtom("R4(C,D,E)");
         ArrayList<String> temp1 = new ArrayList<>(map.keySet());
         System.out.println("relationName = " + temp1.get(0));
-        ArrayList<List<String>> temp2 = new ArrayList<>(map.values());
+        ArrayList<List<Variable>> temp2 = new ArrayList<>(map.values());
         System.out.println("attributes = " + temp2.get(0));
     }
 
@@ -32,9 +32,13 @@ public class ReadFilesTest {
     }
 
     @Test
-    public void testGetAttributeListFromRelationalAtom() {
-        List<String> attributeList = ReadFiles.getAttributeListFromRelationalAtom("STUDENT(Sid,Sage,Ssex,Sdept)");
-        System.out.println(attributeList); // [Sid,Sage,Ssex,Sdept]
+    public void testGetVariableListFromRelationalAtom() {
+        List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom("STUDENT(Sid,Sage,Ssex,Sdept)");
+        List<String> variableNameList = new ArrayList<>();
+        for (Variable variable : variableList) {
+            variableNameList.add(variable.getName());
+        }
+        System.out.println(variableNameList); // [Sid,Sage,Ssex,Sdept]
     }
 
     @Test
@@ -47,5 +51,21 @@ public class ReadFilesTest {
     public void testReadAttributes(){
         List<String> attributes = ReadFiles.readAttributes("examples\\\\attributes.txt");
         System.out.println(attributes); // [A, B, C, D, E]
+    }
+
+    @Test
+    public void testParseTGD(){
+        System.out.println(ReadFiles.parseTGD("R(x0,x1,x2) -> Q(x2,z1,z2) and P(x0,z3)"));
+        System.out.println(ReadFiles.parseTGD("R(x1,x2,x3) -> Q(x2,x1,z1) and P(x1,r)"));
+        System.out.println(ReadFiles.parseTGD("Emprunt(x1,x2) -> Livre(x2,y1,z1) and Lecteur(x1)"));
+        System.out.println(ReadFiles.parseTGD("Livre(x1,x2,x3) -> Auteur(x2,y,z)"));
+    }
+
+    @Test
+    public void testReadTGDs(){
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
+        for (TGD tgd : tgds) {
+            System.out.println(tgd);
+        }
     }
 }
