@@ -1,7 +1,10 @@
+import constraints.FD;
+import constraints.TGD;
+import datatype.Variable;
 import org.junit.Test;
+import util.ReadFiles;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
@@ -9,7 +12,7 @@ public class ReadFilesTest {
 
     @Test
     public void testReadFDs() {
-        List<FD> fds = ReadFiles.readFDs("examples\\\\FDs.txt");
+        List<FD> fds = ReadFiles.readFDs("examples\\\\FD\\\\FDs.txt");
         for (FD fd : fds) {
             System.out.println(fd);
         }
@@ -17,7 +20,7 @@ public class ReadFilesTest {
 
     @Test
     public void testParseRelationalAtom() {
-//        HashMap<String, List<String>> map = ReadFiles.parseRelationalAtom("R(A,B,C,D,E)");
+//        HashMap<String, List<String>> map = util.ReadFiles.parseRelationalAtom("R(A,B,C,D,E)");
         HashMap<String, List<Variable>> map = ReadFiles.parseRelationalAtom("R4(C,D,E)");
         ArrayList<String> temp1 = new ArrayList<>(map.keySet());
         System.out.println("relationName = " + temp1.get(0));
@@ -43,13 +46,13 @@ public class ReadFilesTest {
 
     @Test
     public void testReadDecompositions(){
-        List<List<String>> decompositions = ReadFiles.readDecompositions("examples\\\\decompositions.txt");
+        List<List<String>> decompositions = ReadFiles.readDecompositions("examples\\\\FD\\\\decompositions.txt");
         System.out.println(decompositions); // [[A, D], [A, B], [B, E], [C, D, E], [A, E]]
     }
 
     @Test
     public void testReadAttributes(){
-        List<String> attributes = ReadFiles.readAttributes("examples\\\\attributes.txt");
+        List<String> attributes = ReadFiles.readAttributes("examples\\\\FD\\\\attributes.txt");
         System.out.println(attributes); // [A, B, C, D, E]
     }
 

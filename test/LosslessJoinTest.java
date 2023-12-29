@@ -1,3 +1,7 @@
+import algorithm.LosslessJoin;
+import constraints.FD;
+import datatype.Data;
+import datatype.LabeledNull;
 import org.junit.Test;
 
 import java.util.HashMap;

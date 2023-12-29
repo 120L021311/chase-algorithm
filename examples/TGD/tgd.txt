@@ -1,4 +1,2 @@
 R(x0,x1,x2) -> Q(x2,z1,z2) and P(x0,z3)
 R(x1,x2,x3) -> Q(x2,x1,z1) and P(x1,r)
-Emprunt(x1,x2) -> Livre(x2,y1,z1) and Lecteur(x1)
-Livre(x1,x2,x3) -> Auteur(x2,y,z)
