@@ -54,6 +54,7 @@ public class Table {
             System.out.println("元组的属性个数与表的属性个数不同，插入失败！");
             return false;
         } else {
+            //TODO: 如果元组在表中已经存在，不应该再次插入重复元组？—————增加判断元组相等的方法(重写Tuple类的equals()、hashCode()方法)
             tuples.add(tuple);
             return true;
         }
@@ -63,7 +64,7 @@ public class Table {
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("TableName : ").append(tableName).append("\n");
-        if(attributeNames != null){ // 对于某些应用 constraints.TGD 新生成的表，可能不存在表头attributeNames
+        if(attributeNames != null){ // 对于某些应用 TGD 新生成的表，可能不存在表头attributeNames
             for (String attributeName : attributeNames) {
                 stringBuilder.append(attributeName).append(",");
             }

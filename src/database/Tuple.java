@@ -3,6 +3,7 @@ package database;
 import datatype.Value;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 这个类用来表示数据库中的元组

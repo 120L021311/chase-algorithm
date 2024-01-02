@@ -1,2 +1,4 @@
-R(x0,x1,x2) -> Q(x2,z1,z2) and P(x0,z3)
-R(x1,x2,x3) -> Q(x2,x1,z1) and P(x1,r)
+R(x0,x1,x2) and Q(x3,x4,x5) -> P(x0,x1,x5) and S(x1,x2,x5) and T(x0,z)
+R(x0,x1,x2) and Q(x2,x3,x4) -> P(x0,x2,x4) and T(x1,x3)
+R(x0,x1,x2) and Q(x1,x2,x3) -> T(x0,x3) and U(x3,x0)
+R(x0,x1,x2) -> V(x2,l)

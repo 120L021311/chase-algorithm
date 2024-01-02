@@ -9,12 +9,12 @@ import java.util.List;
 public class ChaseAlgorithmTest {
 
     @Test
-    public void testChaseForLinearTGD(){
+    public void testChaseForTGD(){
         Database database = new Database();
         database.initializeDatabase();
 
         List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
-        ChaseAlgorithm.chaseForLinearTGD(database,tgds);
+        ChaseAlgorithm.chaseForTGD(database,tgds);
         System.out.println(database);
     }
 }

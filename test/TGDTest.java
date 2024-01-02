@@ -19,6 +19,7 @@ public class TGDTest {
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             System.out.println(tgd + "的" + triggers);
+            System.out.println(triggers.size());
         }
     }
 

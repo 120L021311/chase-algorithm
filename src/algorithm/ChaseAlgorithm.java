@@ -9,7 +9,7 @@ import java.util.List;
 
 public class ChaseAlgorithm {
 
-    public static void chaseForLinearTGD(Database database, List<TGD> tgds) {
+    public static void chaseForTGD(Database database, List<TGD> tgds) {
         boolean changed;
         do {
             changed = false;
