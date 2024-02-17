@@ -18,7 +18,7 @@ public class ChaseAlgorithm {
                 for (Trigger trigger : triggers) {
                     List<RelationalAtom> headAtoms = tgd.getHead();
                     for (RelationalAtom headAtom : headAtoms) {
-                        if (tgd.checkActive(database, trigger, headAtom)) {
+                        if (trigger.checkActive(database,headAtom)) {
                             tgd.apply(database, trigger, headAtom);
                             changed = true;
                         }

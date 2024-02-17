@@ -1,0 +1,1 @@
+targethospital(doctor,spec,hospital1,npi1,hconf1) and doctor(npi2,doctor,spec,hospital2,conf2) -> hospital1=hospital2 and npi1=npi2

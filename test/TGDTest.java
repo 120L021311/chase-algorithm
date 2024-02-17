@@ -35,7 +35,8 @@ public class TGDTest {
             List<RelationalAtom> headAtoms = tgd.getHead();
             for (Trigger trigger : triggers) {
                 for (RelationalAtom headAtom : headAtoms) {
-                    boolean b = tgd.checkActive(database, trigger, headAtom);
+//                    boolean b = tgd.checkActive(database, trigger, headAtom);
+                    boolean b = trigger.checkActive(database, headAtom);
                     System.out.println("对于TGD：" + tgd + "的trigger " + trigger +
                             ",它的" + headAtom + "是否active的结果为" + b + "\n");
                 }
@@ -55,7 +56,7 @@ public class TGDTest {
             List<RelationalAtom> headAtoms = tgd.getHead();
             for (Trigger trigger : triggers) {
                 for (RelationalAtom headAtom : headAtoms) {
-                    boolean b = tgd.checkActive(database, trigger, headAtom);
+                    boolean b = trigger.checkActive(database,headAtom);
                     if(b){
                         tgd.apply(database,trigger,headAtom);
                         System.out.println(database);

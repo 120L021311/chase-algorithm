@@ -1,6 +1,7 @@
 package database;
 
 import datatype.ConstValue;
+import datatype.LabeledNull;
 import datatype.Value;
 
 import java.io.BufferedReader;
@@ -15,7 +16,7 @@ import java.util.*;
 public class Database {
     private HashSet<String> tableNames; // 数据库中的所有的表名
     private HashSet<Table> tables;
-    private static final String inputDirectory = "examples/database_input"; // 保存初始数据库实例的输入数据文件的目录
+    private static final String inputDirectory = "examples/test"; // 保存初始数据库实例的输入数据文件的目录
     private List<String> inputFileNames; // 用来初始化数据库实例的输入数据文件的路径,为examples/database_input目录下的.csv文件
 
     public Database() {
@@ -53,6 +54,7 @@ public class Database {
 
     /**
      * 通过表名获得数据库中相对应的表
+     *
      * @param tableName 表名
      * @return 与表名相对应的表 (Table对象)
      */
@@ -97,6 +99,7 @@ public class Database {
 
     /**
      * 在数据库中创建一个表
+     *
      * @param tableName 要创建的表的名称
      * @return 创建后得到的表 (Table对象)
      */
@@ -113,9 +116,13 @@ public class Database {
 
     /**
      * 利用文件输入初始化数据库中的一个表
+     *
      * @param fileName 文件输入路径，路径中.csv前的部分为表名，文件内部保存了该表中的数据
      */
     public void initializeTable(String fileName) {
+        if(!fileName.endsWith(".csv")){ //说明不是csv类型的文件，不是数据库中的数据文件
+            return;
+        }
         String tableName = fileName.replace(".csv", "");
         Table table = createTable(tableName);
 
@@ -133,10 +140,17 @@ public class Database {
                     continue;
                 }
                 //TODO: 此处初始化数据库实例使得数据库中所有常量类型都用String类型表示了，与之前将ConstValue设计成共用体相矛盾，怎么解决？
+                if (line.endsWith(",")) {
+                    line = line + " ";
+                }
                 String[] attributeValues = line.split(",");
                 List<Value> temp = new ArrayList<>();
                 for (String attributeValue : attributeValues) {
-                    temp.add(new ConstValue(attributeValue));
+                    if (attributeValue.trim().isEmpty()) { //说明这个位置的数据值缺失了,创建一个标记空值占位
+                        temp.add(new LabeledNull());
+                    } else {
+                        temp.add(new ConstValue(attributeValue));
+                    }
                 }
                 Tuple tuple = new Tuple(temp);
                 table.insert(tuple);
@@ -162,6 +176,36 @@ public class Database {
         for (String inputFileName : inputFileNames) {
             initializeTable(inputFileName);
         }
+    }
+
+    /**
+     * 完成chase过程中整个数据库实例的更新，修改元组中的标记空值的取值
+     *
+     * @param mapping 应该同步到数据库中的修改映射关系
+     */
+    public void updateDatabase(HashMap<LabeledNull, Value> mapping) {
+        HashSet<LabeledNull> mappingKeySet = new HashSet<>(mapping.keySet());
+        for (Table table : tables) {
+            if(table.isContainLabeledNull() && !intersection(mappingKeySet,table.getLabeledNullSet()).isEmpty()){
+                table.updateTable(mapping);
+            }
+        }
+    }
+
+    /**
+     * 获得两个HashSet<LabeledNull>的交集，用于进行是否需要更新的判断
+     * @param set1 第一个HashSet<LabeledNull>
+     * @param set2 第二个HashSet<LabeledNull>
+     * @return 交集
+     */
+    public HashSet<LabeledNull> intersection(HashSet<LabeledNull> set1, HashSet<LabeledNull> set2) {
+        HashSet<LabeledNull> result = new HashSet<>();
+        for (LabeledNull labeledNull : set1) {
+            if (set2.contains(labeledNull)) {
+                result.add(labeledNull);
+            }
+        }
+        return result;
     }
 
     @Override

@@ -72,8 +72,9 @@ public class TGD extends Constraint {
         //由于List是有序的，只需要按顺序构建对应关系即可
         for (Tuple tuple : tuples) {
             HashMap<Variable, Value> temp = new HashMap<>();
+            List<Value> attributeValue = tuple.getAttributeValue();
             for (int i = 0; i < variableList.size(); i++) {
-                temp.put(variableList.get(i), tuple.getAttributeValue().get(i));
+                temp.put(variableList.get(i), attributeValue.get(i));
             }
             Trigger trigger = new Trigger(temp);
             triggers.add(trigger);
@@ -117,67 +118,6 @@ public class TGD extends Constraint {
     }
 
     /**
-     * 对于一条 TGD，得到了满足它条件(body)的 Trigger，检查是否满足它结论(head)中的一个原子
-     * 如果满足结论则 Trigger 不活跃，否则 Trigger为活跃的(active)
-     *
-     * @param database 数据库实例
-     * @param trigger  一条满足条件的 Trigger
-     * @param headAtom TGD的一个结论
-     * @return 结论如果不满足则返回 true，否则返回 false
-     */
-    public boolean checkActive(Database database, Trigger trigger, RelationalAtom headAtom) {
-        boolean ret = true;
-        String relationName = headAtom.getRelationName();
-        if (!database.getTableNames().contains(relationName)) {
-            return ret;
-        }
-
-        HashMap<Integer, Value> index_value = getIndexValueMap(trigger, headAtom);
-        Table table = database.getTableWithName(relationName);
-        assert table != null;
-
-        //检查所有已有元组中是否有满足index_value中条件的元组，如果有则为inactive
-        List<Tuple> tuples = table.getTuples();
-        for (Tuple tuple : tuples) {
-            List<Value> attributeValue = tuple.getAttributeValue();
-            int flag = 1; // 假设这条元组满足条件
-            for (Map.Entry<Integer, Value> entry : index_value.entrySet()) {
-                Integer key = entry.getKey();
-                Value value = entry.getValue();
-                if (!attributeValue.get(key).equals(value)) {
-                    flag = 0; // 实际这条元组不满足条件
-                    break;
-                }
-            }
-            if (flag == 1) { //说明每个下标对应值都正确，有满足index_value中条件的元组，返回false
-                ret = false;
-                break;
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * 对于 headAtom指定的表，获得满足结论的元组的下标和对应的属性值应当是什么
-     *
-     * @param trigger  一条满足前提的 symbols.Trigger
-     * @param headAtom TGD的一个结论
-     * @return 满足结论的元组的下标和对应的属性值的对应关系
-     */
-    public HashMap<Integer, Value> getIndexValueMap(Trigger trigger, RelationalAtom headAtom) {
-        List<Variable> variableList = headAtom.getVariableList();
-        HashMap<Variable, Value> map = trigger.getMap();
-        HashMap<Integer, Value> index_value = new HashMap<>(); // 此处保存对于 headAtom 指定的表，满足条件的元组的下标和对应的属性值应当是什么
-        for (int i = 0; i < variableList.size(); i++) {
-            Variable variable = variableList.get(i);
-            if (map.containsKey(variable)) {
-                index_value.put(variableList.indexOf(variable), map.get(variable));
-            }
-        }
-        return index_value;
-    }
-
-    /**
      * 对于一个数据库实例，应用一条 TGD 对数据库中的数据进行修改
      *
      * @param database 数据库实例
@@ -198,7 +138,7 @@ public class TGD extends Constraint {
             table = database.getTableWithName(relationName);
         }
 
-        HashMap<Integer, Value> index_value = getIndexValueMap(trigger, headAtom);
+        HashMap<Integer, Value> index_value = trigger.getIndexValueMap(headAtom);
 
         for (Map.Entry<Integer, Value> entry : index_value.entrySet()) {
             Integer key = entry.getKey();

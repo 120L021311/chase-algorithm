@@ -1,0 +1,8 @@
+R(a,b,c,d,e) and R(a,b1,c1,d1,e1) -> c=c1
+R(a,b,c,d,e) and R(a1,b,c1,d1,e1) -> c=c1
+R(a,b,c,d,e) and R(a1,b1,c,d1,e1) -> d=d1
+R(a,b,c,d,e) and R(a1,b1,c1,d,e) -> c=c1
+R(a,b,c,d,e) and R(a1,b1,c,d1,e) -> a=a1
+S(x,y,z) and S(x,y1,z1) -> y=y1
+S(x,y,z) and S(x1,y,z1) -> z=z1
+S(x,y,z) and S(x1,y1,z) -> x=x1

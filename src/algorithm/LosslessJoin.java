@@ -244,5 +244,3 @@ public class LosslessJoin {
 }
 
 //TODO：1.目前编写的方法只能处理函数依赖右侧只有一个属性值的情况，如果右侧为有多个属性的属性列表如何处理？是否是多值依赖？(查多值依赖的定义)
-//      2.尝试考虑处理约束的 body 或 head 中有多个 relationalAtom 的情况
-//      3.尝试设计管理 body 和 head 都只有一个 relationalAtom 的 TGD

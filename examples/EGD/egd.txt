@@ -1,0 +1,1 @@
+MasterSupp(sid,sa,sn,h) and MasterSupp(sid,sa',sn',h') -> sa=sa' and sn=sn' and h=h'

@@ -1,17 +1,16 @@
 package util;
 
+import constraints.EGD;
 import constraints.FD;
 import constraints.TGD;
 import datatype.Variable;
+import symbols.EqualAtom;
 import symbols.RelationalAtom;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,54 +21,7 @@ public class ReadFiles {
     private static final String regexForFD = "^(?<leftAttributeList>[^-]+)->(?<rightAttributeList>.+)$"; // FD类型输入格式的正则表达式
     private static final String regexForRelationalAtoms = "^(?<relationName>[^(]+)\\((?<variableList>[^)]+)\\)$"; // 关系原子类型输入格式的正则表达式，例：R(A,B,C,D,E) 或 R1(A,D)
     private static final String regexForTGD = "^(?<bodyAtoms>[^-]+)->(?<headAtoms>.+)$"; // TGD类型输入格式的正则表达式
-
-
-    /**
-     * 读入函数依赖集合文件，并保存在集合中
-     * 文件内容要求：文件中一行为一条 FD
-     * fileName 保存所有函数依赖关系的文件
-     *
-     * @return 所有函数依赖构关系组成的集合
-     */
-    public static List<FD> readFDs(String fileName) {
-        BufferedReader bufferedReader = null;
-        List<FD> ret = new ArrayList<>();
-        try {
-            bufferedReader = new BufferedReader(new FileReader(fileName));
-            Pattern pattern = Pattern.compile(regexForFD);
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-//                strings.add(line);
-//                String[] split = line.split("->");
-//                String[] left = split[0].split(",");
-//                String[] right = split[1].split(",");
-//                ArrayList<String> leftAttributes = new ArrayList<>(Arrays.asList(left));
-//                ArrayList<String> rightAttributes = new ArrayList<>(Arrays.asList(right));
-//                constraints.FD fd = new constraints.FD(leftAttributes, rightAttributes);
-//                ret.add(fd);
-                Matcher matcher = pattern.matcher(line);
-                if (matcher.matches()) {
-                    String leftAttributeList = matcher.group("leftAttributeList");
-                    ArrayList<String> leftAttributes = new ArrayList<>(Arrays.asList(leftAttributeList.split(",")));
-                    String rightAttributeList = matcher.group("rightAttributeList");
-                    ArrayList<String> rightAttributes = new ArrayList<>(Arrays.asList(rightAttributeList.split(",")));
-                    FD fd = new FD(leftAttributes, rightAttributes);
-                    ret.add(fd);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return ret;
-    }
+    private static final String regexForEGD = "^(?<bodyAtoms>[^-]+)->(?<headAtoms>.+)$"; // EGD类型输入格式的正则表达式
 
     /**
      * 对于一个 relationalAtom ，解析得到对应的关系名称
@@ -118,6 +70,182 @@ public class ReadFiles {
         }
 
         return map;
+    }
+
+    /**
+     * 对于字符串形式的 TGD 进行解析，提取 TGD 中的信息并创建 TGD 对象
+     * @param TGDString 字符串形式的 TGD
+     * @return 创建的 TGD 对象
+     */
+    public static TGD parseTGD(String TGDString) {
+        Pattern pattern = Pattern.compile(regexForTGD);
+        Matcher matcher = pattern.matcher(TGDString);
+
+        List<RelationalAtom> body = new ArrayList<>();
+        List<RelationalAtom> head = new ArrayList<>();
+
+        if (matcher.matches()) {
+            String bodyAtoms = matcher.group("bodyAtoms");
+            String headAtoms = matcher.group("headAtoms");
+            String[] bodyAtomStrings = bodyAtoms.split("and");
+            for (String bodyAtomString : bodyAtomStrings) {
+                bodyAtomString = bodyAtomString.trim();
+                String relationName = ReadFiles.getRelationNameFromRelationalAtom(bodyAtomString);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(bodyAtomString);
+                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
+                body.add(relationalAtom);
+            }
+            String[] headAtomStrings = headAtoms.split("and");
+            for (String headAtomString : headAtomStrings) {
+                headAtomString = headAtomString.trim();
+                String relationName = ReadFiles.getRelationNameFromRelationalAtom(headAtomString);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(headAtomString);
+                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
+                head.add(relationalAtom);
+            }
+        }
+
+        TGD tgd = new TGD(body, head);
+        return tgd;
+    }
+
+    /**
+     * 从文件输入中读取 TGD (文件中一行为一条 TGD)
+     * @param fileName 保存 TGD 的文件路径
+     * @return TGD集合
+     */
+    public static List<TGD> readTGDs(String fileName) {
+        BufferedReader bufferedReader = null;
+        List<TGD> ret = new ArrayList<>();
+
+        try {
+            bufferedReader = new BufferedReader(new FileReader(fileName));
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                TGD tgd = ReadFiles.parseTGD(line);
+                ret.add(tgd);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return ret;
+    }
+
+    public static EGD parseEGD(String EGDString){
+        Pattern pattern = Pattern.compile(regexForEGD);
+        Matcher matcher = pattern.matcher(EGDString);
+
+        List<RelationalAtom> body = new ArrayList<>();
+        List<EqualAtom> head = new ArrayList<>();
+
+        if(matcher.matches()){
+            String bodyAtoms = matcher.group("bodyAtoms");
+            String headAtoms = matcher.group("headAtoms");
+            String[] bodyAtomStrings = bodyAtoms.split("and");
+            for (String bodyAtomString : bodyAtomStrings) {
+                bodyAtomString = bodyAtomString.trim();
+                String relationName = ReadFiles.getRelationNameFromRelationalAtom(bodyAtomString);
+                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(bodyAtomString);
+                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
+                body.add(relationalAtom);
+            }
+
+            String[] headAtomStrings = headAtoms.split("and");
+            for (String headAtomString : headAtomStrings) {
+                headAtomString = headAtomString.trim();
+                EqualAtom equalAtom = new EqualAtom(headAtomString);
+                head.add(equalAtom);
+            }
+        }
+
+        EGD egd = new EGD(body, head);
+        return egd;
+    }
+
+    /**
+     * 从文件输入中读取 EGD (文件中一行为一条 EGD)
+     * @param fileName 保存 EGD 的文件路径
+     * @return EGD集合
+     */
+    public static List<EGD> readEGDs(String fileName) {
+        BufferedReader bufferedReader = null;
+        List<EGD> ret = new ArrayList<>();
+
+        try {
+            bufferedReader = new BufferedReader(new FileReader(fileName));
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                EGD egd = ReadFiles.parseEGD(line);
+                ret.add(egd);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return ret;
+    }
+
+
+    /**
+     * 读入函数依赖集合文件，并保存在集合中
+     * 文件内容要求：文件中一行为一条 FD
+     * fileName 保存所有函数依赖关系的文件
+     *
+     * @return 所有函数依赖构关系组成的集合
+     */
+    public static List<FD> readFDs(String fileName) {
+        BufferedReader bufferedReader = null;
+        List<FD> ret = new ArrayList<>();
+        try {
+            bufferedReader = new BufferedReader(new FileReader(fileName));
+            Pattern pattern = Pattern.compile(regexForFD);
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+//                strings.add(line);
+//                String[] split = line.split("->");
+//                String[] left = split[0].split(",");
+//                String[] right = split[1].split(",");
+//                ArrayList<String> leftAttributes = new ArrayList<>(Arrays.asList(left));
+//                ArrayList<String> rightAttributes = new ArrayList<>(Arrays.asList(right));
+//                constraints.FD fd = new constraints.FD(leftAttributes, rightAttributes);
+//                ret.add(fd);
+                Matcher matcher = pattern.matcher(line);
+                if (matcher.matches()) {
+                    String leftAttributeList = matcher.group("leftAttributeList");
+                    ArrayList<String> leftAttributes = new ArrayList<>(Arrays.asList(leftAttributeList.split(",")));
+                    String rightAttributeList = matcher.group("rightAttributeList");
+                    ArrayList<String> rightAttributes = new ArrayList<>(Arrays.asList(rightAttributeList.split(",")));
+                    FD fd = new FD(leftAttributes, rightAttributes);
+                    ret.add(fd);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return ret;
     }
 
     /**
@@ -174,73 +302,6 @@ public class ReadFiles {
                 for (Variable variable : variableList) {
                     ret.add(variable.getName());
                 }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * 对于字符串形式的 constraints.TGD 进行解析，提取 TGD 中的信息并创建 TGD 对象
-     * @param TGDString 字符串形式的 TGD
-     * @return 创建的 constraints.TGD 对象
-     */
-    public static TGD parseTGD(String TGDString) {
-        Pattern pattern = Pattern.compile(regexForTGD);
-        Matcher matcher = pattern.matcher(TGDString);
-
-        List<RelationalAtom> body = new ArrayList<>();
-        List<RelationalAtom> head = new ArrayList<>();
-
-        if (matcher.matches()) {
-            String bodyAtoms = matcher.group("bodyAtoms");
-            String headAtoms = matcher.group("headAtoms");
-            String[] bodyAtomStrings = bodyAtoms.split("and");
-            for (String bodyAtomString : bodyAtomStrings) {
-                bodyAtomString = bodyAtomString.trim();
-                String relationName = ReadFiles.getRelationNameFromRelationalAtom(bodyAtomString);
-                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(bodyAtomString);
-                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
-                body.add(relationalAtom);
-            }
-            String[] headAtomStrings = headAtoms.split("and");
-            for (String headAtomString : headAtomStrings) {
-                headAtomString = headAtomString.trim();
-                String relationName = ReadFiles.getRelationNameFromRelationalAtom(headAtomString);
-                List<Variable> variableList = ReadFiles.getVariableListFromRelationalAtom(headAtomString);
-                RelationalAtom relationalAtom = new RelationalAtom(relationName, variableList);
-                head.add(relationalAtom);
-            }
-        }
-
-        TGD tgd = new TGD(body, head);
-        return tgd;
-    }
-
-    /**
-     * 从文件输入中读取 TGD (文件中一行为一条 TGD)
-     * @param fileName 保存 TGD 的文件路径
-     * @return TGD集合
-     */
-    public static List<TGD> readTGDs(String fileName) {
-        BufferedReader bufferedReader = null;
-        List<TGD> ret = new ArrayList<>();
-
-        try {
-            bufferedReader = new BufferedReader(new FileReader(fileName));
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                TGD tgd = ReadFiles.parseTGD(line);
-                ret.add(tgd);
             }
         } catch (IOException e) {
             e.printStackTrace();
