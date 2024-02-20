@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * this is a class for labeled nulls
  * 设定：1.ConstValue对象小于LabeledNull对象
- *      2.LabelNull之间对象之间的比较是对于下标的比较，下标较小的小
+ * 2.LabelNull之间对象之间的比较是对于下标的比较，下标较小的小
  */
 public class LabeledNull extends Value {
     private static int nextSubscript = 1;
@@ -26,10 +26,11 @@ public class LabeledNull extends Value {
 
     /**
      * 比较两个LabeledNull对象之间的大小
+     *
      * @param anotherLabeledNull 另一个LabeledNull对象
      * @return 大于等于另一个对象返回true，小于返回false
      */
-    public boolean compare(LabeledNull anotherLabeledNull){
+    public boolean compare(LabeledNull anotherLabeledNull) {
         int thisSubscript = this.getSubscript();
         int anotherSubscript = anotherLabeledNull.getSubscript();
         return thisSubscript >= anotherSubscript;
@@ -37,11 +38,28 @@ public class LabeledNull extends Value {
 
     /**
      * 比较LabeledNull对象和ConstValue对象的大小
+     *
      * @param constValue ConstValue对象
      * @return 因为LabeledNull对象永远大于ConstValue对象，故直接返回true
      */
-    public boolean compare(ConstValue constValue){
+    public boolean compare(ConstValue constValue) {
         return true;
+    }
+
+    /**
+     * 比较一个LabeledNull对象和一个Value对象的大小
+     * @param value 传入的Value对象
+     * @return 大于则返回true，否则返回false
+     */
+    public boolean compare(Value value) {
+        if(value instanceof ConstValue){
+            return true;
+        } else { //value instanceof LabeledNull
+            int thisSubscript = this.getSubscript();
+            LabeledNull anotherLabeledNull = (LabeledNull) value;
+            int anotherSubscript = anotherLabeledNull.getSubscript();
+            return thisSubscript >= anotherSubscript;
+        }
     }
 
     @Override

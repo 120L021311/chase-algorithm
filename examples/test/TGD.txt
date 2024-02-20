@@ -1,0 +1,2 @@
+S(x,y,z) and T(z,p,q) -> R(x,y,z,p,q)
+R(a,b,c,d,e) -> V(c,l)

@@ -97,7 +97,7 @@ public class Tuple {
         for (int i = 0; i < attributeNums - 1; i++) {
             stringBuilder.append(attributeValues.get(i).toString()).append(",");
         }
-        stringBuilder.append(attributeValues.get(attributeNums - 1).toString());
+        stringBuilder.append(attributeValues.get(attributeNums - 1).toString()).append("\n");
         return stringBuilder.toString();
     }
 }

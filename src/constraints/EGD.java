@@ -26,6 +26,10 @@ public class EGD extends Constraint {
         }
     }
 
+    public boolean isSimple() {
+        return simple;
+    }
+
     public List<RelationalAtom> getBody() {
         return body;
     }
@@ -186,7 +190,170 @@ public class EGD extends Constraint {
         return result;
     }
 
-    //此方法是对于不满足的相等关系，应用EGD增加一条修改的映射关系，添加到总的映射关系中
+    /**
+     * 对于不满足的相等关系，应用EGD增加一条修改的映射关系，添加到总的映射关系中
+     * 应用于EGD是simple的情况，此时不需要嵌套循环连接来获得triggers
+     * 分成两种情况：
+     * 1.例如 MasterSupp(sid,sa,sn,h) and MasterSupp(sid,sa',sn',h') -> sa=sa' and sn=sn' and h=h',两个RelationalAtom完全对应，可以只扫描一遍
+     * 2.例如targethospital(doctor,spec,hospital1,npi1,hconf1) and doctor(npi2,doctor,spec,hospital2,conf2) -> hospital1=hospital2 and npi1=npi2,需要扫描两个表各一遍
+     *
+     * @param equalAtom 不满足的相等关系
+     * @param oldMap    已有的映射修改关系
+     * @return 增加新的修改后的总的映射关系
+     */
+    public HashMap<LabeledNull, Value> apply(Database database, EqualAtom equalAtom, HashMap<LabeledNull, Value> oldMap) {
+        RelationalAtom relationalAtom1 = body.get(0); // EGD的body中的第1个RelationalAtom
+        RelationalAtom relationalAtom2 = body.get(1); // EGD的body中的第2个RelationalAtom
+        HashMap<LabeledNull, Value> result = new HashMap<>(oldMap);
+
+        //先找到同时出现的属性的列表和下标顺序
+        List<Variable> relationalAtom1_variableList = relationalAtom1.getVariableList();
+        List<Variable> relationalAtom2_variableList = relationalAtom2.getVariableList();
+        List<Variable> joinVariable = new ArrayList<>(); // 两个RelationalAtom中出现的相同的Variable
+        List<Integer> joinVariableIndex1 = new ArrayList<>(); //相同的Variable在第1个RelationalAtom的变量列表中出现的下标
+        List<Integer> joinVariableIndex2 = new ArrayList<>(); //相同的Variable在第2个RelationalAtom的变量列表中出现的下标
+        for (Variable variable : relationalAtom1_variableList) {
+            if (relationalAtom2_variableList.contains(variable)) {
+                joinVariable.add(variable);
+                joinVariableIndex1.add(relationalAtom1_variableList.indexOf(variable));
+                joinVariableIndex2.add(relationalAtom2_variableList.indexOf(variable));
+            }
+        }
+
+        //之后处理equalAtom
+        Variable leftVariable = equalAtom.getLeftVariable();
+        Variable rightVariable = equalAtom.getRightVariable();
+
+        int equalVariableIndex1; // equalAtom中的Variable在第1个RelationalAtom的变量列表中出现的下标
+        int equalVariableIndex2; // equalAtom中的Variable在第2个RelationalAtom的变量列表中出现的下标
+
+        if (relationalAtom1_variableList.contains(leftVariable)) {
+            equalVariableIndex1 = relationalAtom1_variableList.indexOf(leftVariable);
+            equalVariableIndex2 = relationalAtom2_variableList.indexOf(rightVariable);
+        } else {
+            equalVariableIndex1 = relationalAtom1_variableList.indexOf(rightVariable);
+            equalVariableIndex2 = relationalAtom2_variableList.indexOf(leftVariable);
+        }
+
+        //之后应该扫描两个表增加修改映射关系
+        String tableName1 = relationalAtom1.getRelationName();
+        String tableName2 = relationalAtom2.getRelationName();
+        Table table1 = database.getTableWithName(tableName1);
+        Table table2 = database.getTableWithName(tableName2);
+        List<Tuple> tuples1 = table1.getTuples();
+
+        HashMap<List<Value>, Value> map = new HashMap<>();//保存tempKey到value的对应关系
+
+        //如果两个RelationalAtom的关系名、joinVariable、joinVariableIndex、equalVariableIndex都完全相同，可以只扫描一遍
+        if (tableName1.equals(tableName2) && joinVariableIndex1.equals(joinVariableIndex2) && equalVariableIndex1 == equalVariableIndex2) {
+            for (Tuple tuple : tuples1) {
+                List<Value> attributeValue = tuple.getAttributeValue();
+                List<Value> joinVariableValue1 = new ArrayList<>();
+                for (Integer integer : joinVariableIndex1) {
+                    joinVariableValue1.add(attributeValue.get(integer));
+                }
+                Value equalVariableValue1 = attributeValue.get(equalVariableIndex1);
+                if (!map.containsKey(joinVariableValue1)) {
+                    map.put(joinVariableValue1, equalVariableValue1);
+                } else {
+                    Value value = map.get(joinVariableValue1);
+                    if (!value.equals(equalVariableValue1)) {
+                        if (value instanceof ConstValue && equalVariableValue1 instanceof ConstValue) {
+                            System.out.println("chase failed!");
+                            return null;
+                        } else if (value instanceof ConstValue && equalVariableValue1 instanceof LabeledNull) {
+                            HashMap<LabeledNull, Value> newChange = new HashMap<>();
+                            newChange.put((LabeledNull) equalVariableValue1, value);
+                            result = normalizeMapping(result, newChange);
+                        } else if (value instanceof LabeledNull && equalVariableValue1 instanceof ConstValue) {
+                            HashMap<LabeledNull, Value> newChange = new HashMap<>();
+                            newChange.put((LabeledNull) value, equalVariableValue1);
+                            result = normalizeMapping(result, newChange);
+                        } else {
+                            LabeledNull leftLabeledNull = (LabeledNull) value;
+                            LabeledNull rightLabeledNull = (LabeledNull) equalVariableValue1;
+                            HashMap<LabeledNull, Value> newChange = new HashMap<>();
+
+                            if (leftLabeledNull.compare(rightLabeledNull)) {
+                                newChange.put(leftLabeledNull, rightLabeledNull);
+                            } else {
+                                newChange.put(rightLabeledNull, leftLabeledNull);
+                            }
+
+                            result = normalizeMapping(result, newChange);
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
+        //如果两个表的Index信息不完全对应，则扫描两遍
+        List<Tuple> tuples2 = table2.getTuples();
+
+        for (Tuple tuple : tuples1) {
+            List<Value> attributeValue = tuple.getAttributeValue();
+            List<Value> joinVariableValue1 = new ArrayList<>();
+            for (Integer integer : joinVariableIndex1) {
+                joinVariableValue1.add(attributeValue.get(integer));
+            }
+            Value equalVariableValue1 = attributeValue.get(equalVariableIndex1);
+            if (!map.containsKey(joinVariableValue1)) {
+                map.put(joinVariableValue1, equalVariableValue1);
+            } else {
+                if (map.get(joinVariableValue1) instanceof LabeledNull && ((LabeledNull) map.get(joinVariableValue1)).compare(equalVariableValue1)) {
+                    map.put(joinVariableValue1, equalVariableValue1);
+                }
+            }
+        }
+
+        for (Tuple tuple : tuples2) {
+            List<Value> attributeValue = tuple.getAttributeValue();
+            List<Value> joinVariableValue2 = new ArrayList<>();
+            for (Integer integer : joinVariableIndex2) {
+                joinVariableValue2.add(attributeValue.get(integer));
+            }
+            Value equalVariableValue2 = attributeValue.get(equalVariableIndex2);
+            if (map.containsKey(joinVariableValue2) && !map.get(joinVariableValue2).equals(equalVariableValue2)) {
+                Value value = map.get(joinVariableValue2);
+                if (value instanceof ConstValue && equalVariableValue2 instanceof ConstValue) {
+                    System.out.println("chase failed!");
+                    return null;
+                } else if (value instanceof ConstValue && equalVariableValue2 instanceof LabeledNull) {
+                    HashMap<LabeledNull, Value> newChange = new HashMap<>();
+                    newChange.put((LabeledNull) equalVariableValue2, value);
+                    result = normalizeMapping(result, newChange);
+                } else if (value instanceof LabeledNull && equalVariableValue2 instanceof ConstValue) {
+                    HashMap<LabeledNull, Value> newChange = new HashMap<>();
+                    newChange.put((LabeledNull) value, equalVariableValue2);
+                    result = normalizeMapping(result, newChange);
+                } else {
+                    LabeledNull leftLabeledNull = (LabeledNull) value;
+                    LabeledNull rightLabeledNull = (LabeledNull) equalVariableValue2;
+                    HashMap<LabeledNull, Value> newChange = new HashMap<>();
+
+                    if (leftLabeledNull.compare(rightLabeledNull)) {
+                        newChange.put(leftLabeledNull, rightLabeledNull);
+                    } else {
+                        newChange.put(rightLabeledNull, leftLabeledNull);
+                    }
+
+                    result = normalizeMapping(result, newChange);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 对于不满足的相等关系，应用EGD增加一条修改的映射关系，添加到总的映射关系中
+     *
+     * @param trigger   满足EGD条件的一个trigger
+     * @param equalAtom 不满足的相等关系
+     * @param oldMap    已有的映射修改关系
+     * @return 增加新的修改后的总的映射关系
+     */
     public HashMap<LabeledNull, Value> apply(Trigger trigger, EqualAtom equalAtom, HashMap<LabeledNull, Value> oldMap) {
         HashMap<Variable, Value> variableValueHashMap = trigger.getMap();
         Variable leftVariable = equalAtom.getLeftVariable();
@@ -222,11 +389,11 @@ public class EGD extends Constraint {
     }
 }
 
-/*TODO:1.如果是两个相同的关系组成的body，在连接的时候相当于对自己做笛卡尔乘积，效率很低，需要优化，如何优化？
+/*TODO:1.如果是两个相同的关系组成的body，在连接的时候相当于对自己做笛卡尔乘积，效率很低，需要优化，如何优化？ 完成！
        2.将checkActive()修改成Trigger类下的方法————使用函数重载
          对于TGD:checkActive(Database database,RelationalAtom relationalAtom);     完成！
          对于EGD:checkActive(EqualAtom equalAtom)                                  完成！
-       3.调整类的继承关系，抽象TGD和EGD的共同方法到Constraint中
+       3.调整类的继承关系，抽象TGD和EGD的共同方法到Constraint中       好像没有什么太大的必要？
        4.在将修改同步到数据库实例中时，有的表/元组中没有标记空值，不会发生更新，没有必要进行扫描       完成！
          解决方法：在Table类和Tuple类中加入指导信息(索引)，能够得知某张表或某条元组是否具有标记空值，有哪些标记空值
  */
