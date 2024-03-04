@@ -13,13 +13,12 @@ public class TGDTest {
     public void testGetTriggers() {
         Database database = new Database();
         database.initializeDatabase();
-//        System.out.println(database);
+        System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test3/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             System.out.println(tgd + "的" + triggers);
-            System.out.println(triggers.size());
         }
     }
 
@@ -29,7 +28,7 @@ public class TGDTest {
         database.initializeDatabase();
         System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test3/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             List<RelationalAtom> headAtoms = tgd.getHead();
@@ -50,7 +49,7 @@ public class TGDTest {
         database.initializeDatabase();
         System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test3/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             List<RelationalAtom> headAtoms = tgd.getHead();
@@ -64,6 +63,27 @@ public class TGDTest {
                 }
             }
         }
+    }
 
+    @Test
+    public void testGetEquivalentTriggers(){
+        Database database = new Database();
+        database.initializeDatabase();
+        System.out.println(database);
+
+        List<TGD> tgds = ReadFiles.readTGDs("examples/test2/TGD.txt");
+        for (TGD tgd : tgds) {
+            List<Trigger> triggers = tgd.getTriggers(database);
+            System.out.println(tgd + "的" + triggers);
+        }
+
+        for (TGD tgd : tgds) {
+            List<Trigger> triggers = tgd.getTriggers(database);
+            List<RelationalAtom> headAtoms = tgd.getHead();
+            for (RelationalAtom headAtom : headAtoms) {
+                List<Trigger> equivalentTriggers = tgd.getEquivalentTriggers(triggers, headAtom);
+                System.out.println(tgd + "的" + equivalentTriggers);
+            }
+        }
     }
 }

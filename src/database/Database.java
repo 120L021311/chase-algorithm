@@ -16,7 +16,7 @@ import java.util.*;
 public class Database {
     private HashSet<String> tableNames; // 数据库中的所有的表名
     private HashSet<Table> tables;
-    private static final String inputDirectory = "examples/test"; // 保存初始数据库实例的输入数据文件的目录
+    private static final String inputDirectory = "examples/test2"; // 保存初始数据库实例的输入数据文件的目录
     private List<String> inputFileNames; // 用来初始化数据库实例的输入数据文件的路径,为examples/database_input目录下的.csv文件
 
     public Database() {
