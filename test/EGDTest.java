@@ -25,6 +25,7 @@ public class EGDTest {
     @Test
     public void testEGD() {
         Database database = new Database();
+        database.setInputDirectory("examples/EGD_test/test1");
         database.initializeDatabase();
 
         EGD egd = ReadFiles.parseEGD("MasterSupp(sid,sa,sn,h) and MasterSupp(sid,sa',sn',h') -> sa=sa' and sn=sn' and h=h'");
@@ -36,6 +37,7 @@ public class EGDTest {
     @Test
     public void testCheckActive() {
         Database database = new Database();
+        database.setInputDirectory("examples/EGD_test/test1");
         database.initializeDatabase();
 
         EGD egd = ReadFiles.parseEGD("targethospital(doctor,spec,hospital1,npi1,hconf1) and doctor(npi2,doctor,spec,hospital2,conf2) -> hospital1=hospital2 and npi1=npi2");
@@ -97,6 +99,7 @@ public class EGDTest {
     @Test
     public void testApply() {
         Database database = new Database();
+        database.setInputDirectory("examples/test");
         database.initializeDatabase();
 
 //        EGD egd = ReadFiles.parseEGD("targethospital(doctor,spec,hospital1,npi1,hconf1) and doctor(npi2,doctor,spec,hospital2,conf2) -> hospital1=hospital2 and npi1=npi2");

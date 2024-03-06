@@ -3,10 +3,7 @@ package database;
 import datatype.LabeledNull;
 import datatype.Value;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 这个类用来表示数据库中的元组
@@ -89,6 +86,31 @@ public class Tuple {
 //        if (labeledNullSet.isEmpty()) {
 //            containLabeledNull = false;
 //        }
+    }
+
+    /**
+     * 在内存中拷贝一个 Tuple对象
+     * @return 拷贝后得到的新的 Tuple对象
+     */
+    public Tuple copyTuple(){
+        ArrayList<Value> temp = new ArrayList<>();
+        for (Value attributeValue : attributeValues) {
+            temp.add(attributeValue);
+        }
+        return new Tuple(temp);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tuple tuple = (Tuple) o;
+        return attributeNums == tuple.attributeNums && containLabeledNull == tuple.containLabeledNull && Objects.equals(attributeValues, tuple.attributeValues) && Objects.equals(labeledNullSet, tuple.labeledNullSet);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attributeNums, attributeValues, containLabeledNull, labeledNullSet);
     }
 
     @Override

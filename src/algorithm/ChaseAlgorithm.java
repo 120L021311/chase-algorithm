@@ -40,21 +40,36 @@ public class ChaseAlgorithm {
         } while (changed);
     }
 
-    public static void standardChase(Database database, List<Constraint> constraints) {
-        boolean changed;
-        do {
-            changed = false;
+
+    //问题：incrementInstance和database等引用指向的Table对象、Tuple对象的引用实际上都指向同一个对象
+    //解决：在需要更新时，先拷贝一份再更新，传入更新后的拷贝(也就是代码中copy变量的作用)
+    /**
+     * 3.6下午实现的增加了streaming mode优化的标准chase算法
+     *
+     * @param database    初始数据库实例
+     * @param constraints 约束集
+     * @return 运行标准chase算法得到的修复结果
+     */
+    public static Database standardChase(Database database, List<Constraint> constraints) {
+        Database incrementInstance = new Database();
+
+        for (Table table : database.getTables()) {
+            incrementInstance.addTable(table);
+        }
+
+        while (!incrementInstance.isEmpty()) {
+            Database newlyDerivedSubset = new Database();
             HashMap<LabeledNull, Value> mapping = new HashMap<>();
             for (Constraint constraint : constraints) {
                 if (constraint instanceof TGD) {
                     TGD tgd = (TGD) constraint;
-                    List<Trigger> triggers = tgd.getTriggers(database);
+                    List<Trigger> triggers = tgd.getTriggers(incrementInstance);
                     for (Trigger trigger : triggers) {
                         List<RelationalAtom> headAtoms = tgd.getHead();
                         for (RelationalAtom headAtom : headAtoms) {
-                            if (trigger.checkActive(database, headAtom)) {
-                                tgd.apply(database, trigger, headAtom);
-                                changed = true;
+                            Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+                            if (trigger.checkActive(copy.updateDatabase(mapping), headAtom)) {
+                                tgd.apply(newlyDerivedSubset, trigger, headAtom);
                             }
                         }
                     }
@@ -64,11 +79,14 @@ public class ChaseAlgorithm {
                     if (egd.isSimple()) {
                         List<EqualAtom> headAtoms = egd.getHead();
                         for (EqualAtom equalAtom : headAtoms) {
-                            mapping = egd.apply(database, equalAtom, mapping);
-                            System.out.println("mapping :" + mapping);
+                            Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+                            mapping = egd.apply(copy.updateDatabase(mapping), equalAtom, mapping);
+
+//                            mapping = egd.apply(Database.databaseUnion(newlyDerivedSubset,database).updateDatabase(mapping), equalAtom, mapping);
+//                            System.out.println("mapping :" + mapping);
                         }
                     } else {
-                        List<Trigger> triggers = egd.getTriggers(database);
+                        List<Trigger> triggers = egd.getTriggers(incrementInstance);
                         List<EqualAtom> headAtoms = egd.getHead();
                         for (Trigger trigger : triggers) {
                             for (EqualAtom equalAtom : headAtoms) {
@@ -81,25 +99,76 @@ public class ChaseAlgorithm {
                     }
                 }
             }
-            if (!mapping.isEmpty()) {
-                database.updateDatabase(mapping);
-                changed = true;
-                System.out.println("同步到数据库中");
-            }
 
-            System.out.println("修改后的数据库实例");
-            HashSet<Table> tables = database.getTables();
-            for (Table table : tables) {
-                System.out.println(table.getTableName());
-                List<Tuple> tuples = table.getTuples();
-                for (Tuple tuple : tuples) {
-                    System.out.println(tuple);
-                }
-            }
-        } while (changed);
+            Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+            incrementInstance = Database.databaseDifference(copy.updateDatabase(mapping), database);
+            database = Database.databaseUnion(database.updateDatabase(mapping), incrementInstance);
+        }
+
+        return database;
     }
 
-    public static void obliviousChase(Database database, List<Constraint> constraints){
+    //2.20实现的之前版本的可以正确运行的standardChase，但没有使用streaming mode优化
+//    public static void standardChase(Database database, List<Constraint> constraints) {
+//        boolean changed;
+//        do {
+//            changed = false;
+//            HashMap<LabeledNull, Value> mapping = new HashMap<>();
+//            for (Constraint constraint : constraints) {
+//                if (constraint instanceof TGD) {
+//                    TGD tgd = (TGD) constraint;
+//                    List<Trigger> triggers = tgd.getTriggers(database);
+//                    for (Trigger trigger : triggers) {
+//                        List<RelationalAtom> headAtoms = tgd.getHead();
+//                        for (RelationalAtom headAtom : headAtoms) {
+//                            if (trigger.checkActive(database, headAtom)) {
+//                                tgd.apply(database, trigger, headAtom);
+//                                changed = true;
+//                            }
+//                        }
+//                    }
+//                }
+//                if (constraint instanceof EGD) {
+//                    EGD egd = (EGD) constraint;
+//                    if (egd.isSimple()) {
+//                        List<EqualAtom> headAtoms = egd.getHead();
+//                        for (EqualAtom equalAtom : headAtoms) {
+//                            mapping = egd.apply(database, equalAtom, mapping);
+//                            System.out.println("mapping :" + mapping);
+//                        }
+//                    } else {
+//                        List<Trigger> triggers = egd.getTriggers(database);
+//                        List<EqualAtom> headAtoms = egd.getHead();
+//                        for (Trigger trigger : triggers) {
+//                            for (EqualAtom equalAtom : headAtoms) {
+//                                if (trigger.checkActive(equalAtom)) {
+//                                    mapping = egd.apply(trigger, equalAtom, mapping);
+//                                    System.out.println("mapping :" + mapping);
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            if (!mapping.isEmpty()) {
+//                database.updateDatabase(mapping);
+//                changed = true;
+//                System.out.println("同步到数据库中");
+//            }
+//
+//            System.out.println("修改后的数据库实例");
+//            HashSet<Table> tables = database.getTables();
+//            for (Table table : tables) {
+//                System.out.println(table.getTableName());
+//                List<Tuple> tuples = table.getTuples();
+//                for (Tuple tuple : tuples) {
+//                    System.out.println(tuple);
+//                }
+//            }
+//        } while (changed);
+//    }
+
+    public static void obliviousChase(Database database, List<Constraint> constraints) {
         boolean changed;
         do {
             changed = false;
@@ -156,7 +225,7 @@ public class ChaseAlgorithm {
         } while (changed);
     }
 
-    public static void semiObliviousChase(Database database,List<Constraint> constraints){
+    public static void semiObliviousChase(Database database, List<Constraint> constraints) {
         boolean changed;
         do {
             changed = false;
@@ -169,7 +238,7 @@ public class ChaseAlgorithm {
                     for (RelationalAtom headAtom : headAtoms) {
                         List<Trigger> equivalentTriggers = tgd.getEquivalentTriggers(triggers, headAtom);
                         for (Trigger equivalentTrigger : equivalentTriggers) {
-                            tgd.apply(database,equivalentTrigger,headAtom);
+                            tgd.apply(database, equivalentTrigger, headAtom);
                             changed = true;
                         }
                     }

@@ -16,8 +16,8 @@ import java.util.*;
 public class Database {
     private HashSet<String> tableNames; // 数据库中的所有的表名
     private HashSet<Table> tables;
-    private static final String inputDirectory = "examples/test2"; // 保存初始数据库实例的输入数据文件的目录
-    private List<String> inputFileNames; // 用来初始化数据库实例的输入数据文件的路径,为examples/database_input目录下的.csv文件
+    private String inputDirectory; // 保存初始数据库实例的输入数据文件的目录
+    private List<String> inputFileNames; // 用来初始化数据库实例的输入数据文件的路径,为inputDirectory目录下的.csv文件
 
     public Database() {
         tables = new HashSet<>();
@@ -40,8 +40,12 @@ public class Database {
         this.tables = tables;
     }
 
-    public static String getInputDirectory() {
+    public String getInputDirectory() {
         return inputDirectory;
+    }
+
+    public void setInputDirectory(String inputDirectory) {
+        this.inputDirectory = inputDirectory;
     }
 
     public void setInputFileNames(List<String> inputFileNames) {
@@ -120,7 +124,7 @@ public class Database {
      * @param fileName 文件输入路径，路径中.csv前的部分为表名，文件内部保存了该表中的数据
      */
     public void initializeTable(String fileName) {
-        if(!fileName.endsWith(".csv")){ //说明不是csv类型的文件，不是数据库中的数据文件
+        if (!fileName.endsWith(".csv")) { //说明不是csv类型的文件，不是数据库中的数据文件
             return;
         }
         String tableName = fileName.replace(".csv", "");
@@ -183,17 +187,19 @@ public class Database {
      *
      * @param mapping 应该同步到数据库中的修改映射关系
      */
-    public void updateDatabase(HashMap<LabeledNull, Value> mapping) {
+    public Database updateDatabase(HashMap<LabeledNull, Value> mapping) {
         HashSet<LabeledNull> mappingKeySet = new HashSet<>(mapping.keySet());
         for (Table table : tables) {
-            if(table.isContainLabeledNull() && !intersection(mappingKeySet,table.getLabeledNullSet()).isEmpty()){
+            if (table.isContainLabeledNull() && !intersection(mappingKeySet, table.getLabeledNullSet()).isEmpty()) {
                 table.updateTable(mapping);
             }
         }
+        return this;
     }
 
     /**
      * 获得两个HashSet<LabeledNull>的交集，用于进行是否需要更新的判断
+     *
      * @param set1 第一个HashSet<LabeledNull>
      * @param set2 第二个HashSet<LabeledNull>
      * @return 交集
@@ -207,6 +213,123 @@ public class Database {
         }
         return result;
     }
+
+    /**
+     * 向数据库中添加一个表
+     *
+     * @param table 要添加的表
+     * @return 添加成功返回true，否则返回false
+     */
+    public boolean addTable(Table table) {
+        String tableName = table.getTableName();
+        if (tableNames.contains(tableName)) {
+            System.out.println("表" + tableName + "已经存在，添加失败!");
+            return false;
+        } else {
+            tableNames.add(tableName);
+            tables.add(table);
+            return true;
+        }
+    }
+
+    /**
+     * 数据库实例之间合并的函数，完成关系代数中"并"运算的功能
+     *
+     * @param database1 第一个数据库实例
+     * @param database2 第二个数据库实例
+     * @return 两个数据库实例合并后的新实例
+     */
+    public static Database databaseUnion(Database database1, Database database2) {
+        //思路：对于database1中的每一个表，判断database2中有没有同名的表
+        //如果没有同名的表，则直接加入结果数据库实例中
+        //如果有同名的表，调用表之间的union操作
+        Database res = new Database();
+        HashSet<String> tableNames_1 = database1.getTableNames();
+        HashSet<String> tableNames_2 = database2.getTableNames();
+        for (String tableName : tableNames_1) {
+            Table table_1 = database1.getTableWithName(tableName);
+            if (!tableNames_2.contains(tableName)) {
+                res.addTable(table_1);
+            } else {
+                Table table_2 = database2.getTableWithName(tableName);
+                Table newTable = Table.tableUnion(table_1, table_2);
+                res.addTable(newTable);
+            }
+        }
+        for (String tableName : tableNames_2) {
+            Table table_2 = database2.getTableWithName(tableName);
+            if(!tableNames_1.contains(tableName)){
+                res.addTable(table_2);
+            }
+        }
+        return res;
+    }
+
+    /**
+     * 数据库实例之间作差的函数，完成关系代数中"差"运算的功能
+     *
+     * @param database1 第一个数据库实例
+     * @param database2 第二个数据库实例
+     * @return 得到的新实例 database1\database2
+     */
+    //TODO:考虑在DBMS中利用explain命令观察集合差操作的查询执行计划
+    public static Database databaseDifference(Database database1, Database database2) {
+        //思路：对于database1中的每一个表，判断database2中有没有同名的表
+        //如果没有同名的表，则直接把该表加到结果数据库实例中；
+        //如果有同名的表，则调用表之间的difference操作
+        Database res = new Database();
+        HashSet<String> tableNames_1 = database1.getTableNames();
+        HashSet<String> tableNames_2 = database2.getTableNames();
+        for (String tableName : tableNames_1) {
+            Table table_1 = database1.getTableWithName(tableName);
+            if (!tableNames_2.contains(tableName)) {
+                res.addTable(table_1);
+            } else {
+                //调用表之间的difference操作
+                Table table_2 = database2.getTableWithName(tableName);
+                Table newTable = Table.tableDifference(table_1, table_2);
+
+                //如果作差得到的表中一条元组都没有，则不用添加到结果数据库实例中
+                if (!newTable.getTuples().isEmpty()) {
+                    res.addTable(newTable);
+                }
+            }
+        }
+        return res;
+    }
+
+    /**
+     * 判断数据库实例是否为空(没有表)
+     *
+     * @return 为空返回true，否则返回false
+     */
+    public boolean isEmpty() {
+        return tables.isEmpty();
+    }
+
+    /**
+     * 在内存中拷贝一个 Database对象
+     * @param database 要拷贝的 Database对象
+     * @return 拷贝后得到的新的 Database对象
+     */
+    public static Database copyDatabase(Database database){
+        Database res = new Database();
+        HashSet<String> tableNames = new HashSet<>();
+        for (String tableName : database.tableNames) {
+            tableNames.add(new String(tableName));
+        }
+        res.setTableNames(tableNames);
+
+        HashSet<Table> tables = new HashSet<>();
+        for (Table table : database.getTables()) {
+            //调用Table的copy方法
+            tables.add(table.copyTable());
+        }
+        res.setTables(tables);
+
+        return res;
+    }
+
 
     @Override
     public String toString() {

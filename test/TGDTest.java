@@ -12,6 +12,7 @@ public class TGDTest {
     @Test
     public void testGetTriggers() {
         Database database = new Database();
+        database.setInputDirectory("examples/TGD_test/test3");
         database.initializeDatabase();
         System.out.println(database);
 
@@ -25,6 +26,7 @@ public class TGDTest {
     @Test
     public void testCheckActive() {
         Database database = new Database();
+        database.setInputDirectory("examples/TGD_test/test3");
         database.initializeDatabase();
         System.out.println(database);
 
@@ -46,6 +48,7 @@ public class TGDTest {
     @Test
     public void testApply(){
         Database database = new Database();
+        database.setInputDirectory("examples/TGD_test/test3");
         database.initializeDatabase();
         System.out.println(database);
 
@@ -68,6 +71,7 @@ public class TGDTest {
     @Test
     public void testGetEquivalentTriggers(){
         Database database = new Database();
+        database.setInputDirectory("examples/test2");
         database.initializeDatabase();
         System.out.println(database);
 

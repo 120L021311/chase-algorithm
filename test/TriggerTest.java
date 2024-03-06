@@ -47,7 +47,7 @@ public class TriggerTest {
 //        Trigger trigger = trigger1.mergeTrigger(trigger2);
 //        System.out.println(trigger); // Trigger{map={x0=a, x1=b, x2=c, x3=d, x4=e}}
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test1/tgd.txt");
         TGD tgd = tgds.get(2);
         HashMap<Variable, Value> triggerMap1 = new HashMap<>();
         triggerMap1.put(new Variable("x0"),new ConstValue("a"));

@@ -61,12 +61,20 @@ public class Table {
         this.tuples = tuples;
     }
 
+    public void setContainLabeledNull(boolean containLabeledNull) {
+        this.containLabeledNull = containLabeledNull;
+    }
+
+    public void setLabeledNullSet(HashSet<LabeledNull> labeledNullSet) {
+        this.labeledNullSet = labeledNullSet;
+    }
+
     public boolean insert(Tuple tuple) {
         if (tuple.getAttributeNums() != attributeNums) {
             System.out.println("元组的属性个数与表的属性个数不同，插入失败！");
             return false;
         } else {
-            //TODO: 如果元组在表中已经存在，不应该再次插入重复元组？—————增加判断元组相等的方法(重写Tuple类的equals()、hashCode()方法)
+            //TODO: 如果元组在表中已经存在，是否还应该再次插入重复元组？—————增加判断元组相等的方法(重写Tuple类的equals()、hashCode()方法)
             tuples.add(tuple);
 
             //判断是否需要修改containLabeledNull和labeledNullSet
@@ -127,6 +135,120 @@ public class Table {
             }
         }
         return result;
+    }
+
+    /**
+     * 表之间合并的函数，完成关系代数中"并"运算的功能
+     *
+     * @param table1 第一张表
+     * @param table2 第二张表
+     * @return 两张表合并之后的新表
+     */
+    public static Table tableUnion(Table table1, Table table2) {
+        if (!table1.tableName.equals(table2.tableName)) {
+            System.out.println("两张表表名不同，无法进行并运算！");
+            return null;
+        }
+        if (table1.attributeNums != table2.attributeNums) {
+            System.out.println("两张表属性个数不同，无法进行并运算！");
+            return null;
+        }
+        if (table1.attributeNames != null && table2.attributeNames != null) {
+            if (!table1.attributeNames.equals(table2.attributeNames)) {
+                System.out.println("两张表属性之间不对应，无法进行并运算！");
+                return null;
+            }
+        }
+        Table table = new Table(table1.tableName);
+        table.setAttributeNums(table1.attributeNums);
+        if (table1.attributeNames != null) {
+            table.setAttributeNames(table1.attributeNames);
+        } else if (table2.attributeNames != null) {
+            table.setAttributeNames(table2.attributeNames);
+        }
+        table.tuples.addAll(table1.tuples);
+        table.tuples.addAll(table2.tuples);
+        table.containLabeledNull = table1.containLabeledNull || table2.containLabeledNull;
+        table.labeledNullSet.addAll(table1.labeledNullSet);
+        table.labeledNullSet.addAll(table2.labeledNullSet);
+
+        return table;
+    }
+
+    /**
+     * 表之间作差的函数，完成关系代数中"差"运算的功能
+     *
+     * @param table1 第一张表
+     * @param table2 第二张表
+     * @return 两张表作差之后新的结果表 table1\table2
+     */
+    public static Table tableDifference(Table table1, Table table2) {
+        if (!table1.tableName.equals(table2.tableName)) {
+            System.out.println("两张表表名不同，无法进行差运算！");
+            return null;
+        }
+        if (table1.attributeNums != table2.attributeNums) {
+            System.out.println("两张表属性个数不同，无法进行差运算！");
+            return null;
+        }
+        if (table1.attributeNames != null && table2.attributeNames != null) {
+            if (!table1.attributeNames.equals(table2.attributeNames)) {
+                System.out.println("两张表属性之间不对应，无法进行差运算！");
+                return null;
+            }
+        }
+
+        List<Tuple> tuples_1 = table1.getTuples();
+        List<Tuple> tuples_2 = table2.getTuples();
+
+        Table table = new Table(table1.tableName);
+        table.setAttributeNums(table1.attributeNums);
+        if (table1.attributeNames != null) {
+            table.setAttributeNames(table1.attributeNames);
+        } else if (table2.attributeNames != null) {
+            table.setAttributeNames(table2.attributeNames);
+        }
+
+        for (Tuple tuple : tuples_1) {
+            if (!tuples_2.contains(tuple)) {
+                table.insert(tuple);
+            }
+        }
+        return table;
+    }
+
+    /**
+     * 在内存中拷贝一个 Table对象
+     * @return 拷贝后得到的新的 Table对象
+     */
+    public Table copyTable(){
+        Table res = new Table(tableName);
+        res.setAttributeNums(attributeNums);
+
+        ArrayList<String> temp1 = new ArrayList<>();
+        if(this.getAttributeNames() != null){
+            for (String attributeName : attributeNames) {
+                temp1.add(new String(attributeName));
+            }
+            res.setAttributeNames(temp1);
+        }
+
+        ArrayList<Tuple> temp2 = new ArrayList<>();
+        for (Tuple tuple : this.getTuples()) {
+            //调用tuple的copy方法
+            temp2.add(tuple.copyTuple());
+        }
+        res.setTuples(temp2);
+
+        res.setContainLabeledNull(containLabeledNull);
+
+        HashSet<LabeledNull> temp3 = new HashSet<>();
+        for (LabeledNull labeledNull : this.getLabeledNullSet()) {
+            temp3.add(labeledNull);
+        }
+        res.setLabeledNullSet(temp3);
+
+        return res;
     }
 
     @Override

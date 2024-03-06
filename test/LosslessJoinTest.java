@@ -1,4 +1,4 @@
-import algorithm.LosslessJoin;
+import algorithm.*;
 import constraints.FD;
 import datatype.Data;
 import datatype.LabeledNull;
