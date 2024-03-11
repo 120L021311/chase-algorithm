@@ -99,13 +99,13 @@ public class EGDTest {
     @Test
     public void testApply() {
         Database database = new Database();
-        database.setInputDirectory("examples/test");
+        database.setInputDirectory("examples/EGD_test/test1");
         database.initializeDatabase();
 
 //        EGD egd = ReadFiles.parseEGD("targethospital(doctor,spec,hospital1,npi1,hconf1) and doctor(npi2,doctor,spec,hospital2,conf2) -> hospital1=hospital2 and npi1=npi2");
 //        List<EqualAtom> head = egd.getHead();
 
-        List<EGD> egds = ReadFiles.readEGDs("examples/test/EGD.txt");
+        List<EGD> egds = ReadFiles.readEGDs("examples/EGD_test/test1/egd1.txt");
 
         HashSet<Table> tables = database.getTables();
         for (Table table : tables) {
@@ -134,7 +134,7 @@ public class EGDTest {
                     }
                 }
                 for (Table table : tables) {
-                    System.out.print("tableName:" + table.getTableName() + "\t" + "containLabeledNull:" + table.isContainLabeledNull() + "\tLabeledNullSet:" + table.getLabeledNullSet()+"\n");
+                    System.out.print("tableName:" + table.getTableName() + "\t" + "containLabeledNull:" + table.isContainLabeledNull() + "\tLabeledNullSet:" + table.getLabeledNullSet() + "\n");
                 }
                 database.updateDatabase(mapping);
                 System.out.println("同步到数据库中");
@@ -151,5 +151,5 @@ public class EGDTest {
                 }
             }
         }
-        }
+    }
 }

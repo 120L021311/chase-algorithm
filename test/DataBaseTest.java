@@ -11,7 +11,7 @@ public class DataBaseTest {
     @Test
     public void testInitializeTable(){
         Database database = new Database();
-        database.setInputDirectory("examples/test");
+        database.setInputDirectory("examples/standardChase_test/test1");
         database.initializeDatabase();
 
         HashSet<Table> tables = database.getTables();

@@ -66,7 +66,7 @@ public class ReadFilesTest {
 
     @Test
     public void testReadTGDs(){
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD/tgd.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test1/tgd.txt");
         for (TGD tgd : tgds) {
             System.out.println(tgd);
         }

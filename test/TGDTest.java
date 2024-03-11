@@ -12,11 +12,11 @@ public class TGDTest {
     @Test
     public void testGetTriggers() {
         Database database = new Database();
-        database.setInputDirectory("examples/TGD_test/test3");
+        database.setInputDirectory("examples/TGD_test/test1");
         database.initializeDatabase();
         System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test3/TGD.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test1/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             System.out.println(tgd + "的" + triggers);
@@ -26,11 +26,11 @@ public class TGDTest {
     @Test
     public void testCheckActive() {
         Database database = new Database();
-        database.setInputDirectory("examples/TGD_test/test3");
+        database.setInputDirectory("examples/TGD_test/test1");
         database.initializeDatabase();
         System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test3/TGD.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test1/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             List<RelationalAtom> headAtoms = tgd.getHead();
@@ -48,11 +48,11 @@ public class TGDTest {
     @Test
     public void testApply(){
         Database database = new Database();
-        database.setInputDirectory("examples/TGD_test/test3");
+        database.setInputDirectory("examples/TGD_test/test1");
         database.initializeDatabase();
         System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test3/TGD.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test1/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             List<RelationalAtom> headAtoms = tgd.getHead();
@@ -78,7 +78,7 @@ public class TGDTest {
         List<TGD> tgds = ReadFiles.readTGDs("examples/test2/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
-            System.out.println(tgd + "的" + triggers);
+            System.out.println("triggers：" + triggers);
         }
 
         for (TGD tgd : tgds) {
@@ -86,7 +86,7 @@ public class TGDTest {
             List<RelationalAtom> headAtoms = tgd.getHead();
             for (RelationalAtom headAtom : headAtoms) {
                 List<Trigger> equivalentTriggers = tgd.getEquivalentTriggers(triggers, headAtom);
-                System.out.println(tgd + "的" + equivalentTriggers);
+                System.out.println("triggers的等价类：" + equivalentTriggers);
             }
         }
     }

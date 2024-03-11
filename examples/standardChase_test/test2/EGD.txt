@@ -1,0 +1,1 @@
+R(a,b,c) and S(a,b',c') and T(c,c') -> b=b'
