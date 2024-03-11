@@ -44,8 +44,7 @@ public class ChaseAlgorithmTest {
         database.setInputDirectory("examples/test2");
         database.initializeDatabase();
         List<TGD> tgds = ReadFiles.readTGDs("examples/test2/TGD.txt");
-        List<Constraint> constraints = new ArrayList<>(tgds);
-        System.out.println(ChaseAlgorithm.obliviousChase(database, constraints));
+        System.out.println(ChaseAlgorithm.obliviousChase(database, tgds));
     }
 
     @Test
@@ -54,8 +53,7 @@ public class ChaseAlgorithmTest {
         database.setInputDirectory("examples/test2");
         database.initializeDatabase();
         List<TGD> tgds = ReadFiles.readTGDs("examples/test2/TGD.txt");
-        List<Constraint> constraints = new ArrayList<>(tgds);
-        System.out.println(ChaseAlgorithm.semiObliviousChase(database, constraints));
+        System.out.println(ChaseAlgorithm.semiObliviousChase(database, tgds));
     }
 
 }
