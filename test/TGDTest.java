@@ -12,11 +12,11 @@ public class TGDTest {
     @Test
     public void testGetTriggers() {
         Database database = new Database();
-        database.setInputDirectory("examples/TGD_test/test1");
+        database.setInputDirectory("examples/TGD_test/test4");
         database.initializeDatabase();
         System.out.println(database);
 
-        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test1/TGD.txt");
+        List<TGD> tgds = ReadFiles.readTGDs("examples/TGD_test/test4/TGD.txt");
         for (TGD tgd : tgds) {
             List<Trigger> triggers = tgd.getTriggers(database);
             System.out.println(tgd + "的" + triggers);

@@ -1,0 +1,1 @@
+R(?one,?two1) and R(?one,?two2) -> ?two1=?two2

@@ -240,6 +240,10 @@ public class EGD extends Constraint {
         String tableName2 = relationalAtom2.getRelationName();
         Table table1 = database.getTableWithName(tableName1);
         Table table2 = database.getTableWithName(tableName2);
+        //如果两个表其中一个为空，则本轮不需要应用这条EGD，直接返回
+        if (table1 == null || table2 == null) {
+            return oldMap;
+        }
         List<Tuple> tuples1 = table1.getTuples();
 
         HashMap<List<Value>, Value> map = new HashMap<>();//保存tempKey到value的对应关系
@@ -259,7 +263,7 @@ public class EGD extends Constraint {
                     Value value = map.get(joinVariableValue1);
                     if (!value.equals(equalVariableValue1)) {
                         if (value instanceof ConstValue && equalVariableValue1 instanceof ConstValue) {
-                            System.out.println("chase failed!");
+                            System.out.println(value + " is not equal to " + equalVariableValue1 + ",chase failed!");
                             return null;
                         } else if (value instanceof ConstValue && equalVariableValue1 instanceof LabeledNull) {
                             HashMap<LabeledNull, Value> newChange = new HashMap<>();
@@ -317,7 +321,7 @@ public class EGD extends Constraint {
             if (map.containsKey(joinVariableValue2) && !map.get(joinVariableValue2).equals(equalVariableValue2)) {
                 Value value = map.get(joinVariableValue2);
                 if (value instanceof ConstValue && equalVariableValue2 instanceof ConstValue) {
-                    System.out.println("chase failed!");
+                    System.out.println(value + " is not equal to " + equalVariableValue2 + ",chase failed!");
                     return null;
                 } else if (value instanceof ConstValue && equalVariableValue2 instanceof LabeledNull) {
                     HashMap<LabeledNull, Value> newChange = new HashMap<>();
@@ -363,7 +367,7 @@ public class EGD extends Constraint {
         Value rightVariableValue = variableValueHashMap.get(rightVariable);
 
         if (leftVariableValue instanceof ConstValue && rightVariableValue instanceof ConstValue) {
-            System.out.println("chase failed!");
+            System.out.println(leftVariableValue + " is not equal to " + rightVariableValue + ",chase failed!");
             return null;
         } else if (leftVariableValue instanceof ConstValue && rightVariableValue instanceof LabeledNull) {
             HashMap<LabeledNull, Value> newChange = new HashMap<>();

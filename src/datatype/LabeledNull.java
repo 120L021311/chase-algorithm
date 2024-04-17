@@ -16,6 +16,10 @@ public class LabeledNull extends Value {
         nextSubscript++;
     }
 
+    public static int getNextSubscript() {
+        return nextSubscript;
+    }
+
     public int getSubscript() {
         return subscript;
     }

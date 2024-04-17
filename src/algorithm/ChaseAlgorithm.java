@@ -64,17 +64,32 @@ public class ChaseAlgorithm {
             HashMap<LabeledNull, Value> mapping = new HashMap<>();
             for (Constraint constraint : constraints) {
                 count++;
+//                System.out.println("第" + count + "次检查依赖");
                 if (constraint instanceof TGD) {
                     TGD tgd = (TGD) constraint;
                     List<Trigger> triggers = tgd.getTriggers(incrementInstance);
                     for (Trigger trigger : triggers) {
-                        List<RelationalAtom> headAtoms = tgd.getHead();
-                        for (RelationalAtom headAtom : headAtoms) {
+                        if (tgd.getHead().size() == 1) {
+                            List<RelationalAtom> headAtoms = tgd.getHead();
+                            for (RelationalAtom headAtom : headAtoms) {
+                                Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+                                if (trigger.checkActive(copy.updateDatabase(mapping), headAtom)) {
+                                    tgd.apply(newlyDerivedSubset, trigger, headAtom);
+                                }
+                            }
+                        } else {
                             Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
-                            if (trigger.checkActive(copy.updateDatabase(mapping), headAtom)) {
-                                tgd.apply(newlyDerivedSubset, trigger, headAtom);
+                            if (trigger.checkActive(copy.updateDatabase(mapping), tgd)) {
+                                tgd.apply(newlyDerivedSubset, trigger);
                             }
                         }
+//                        List<RelationalAtom> headAtoms = tgd.getHead();
+//                        for (RelationalAtom headAtom : headAtoms) {
+//                            Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+//                            if (trigger.checkActive(copy.updateDatabase(mapping), headAtom)) {
+//                                tgd.apply(newlyDerivedSubset, trigger, headAtom);
+//                            }
+//                        }
                     }
                 }
                 if (constraint instanceof EGD) {
@@ -108,7 +123,7 @@ public class ChaseAlgorithm {
             database = Database.databaseUnion(database.updateDatabase(mapping), incrementInstance);
         }
 
-        System.out.println("共检查了" + count + "次依赖关系");
+//        System.out.println("共检查了" + count + "次依赖关系");
         return database;
     }
 
@@ -186,7 +201,6 @@ public class ChaseAlgorithm {
             Database newlyDerivedSubset = new Database();
             HashMap<LabeledNull, Value> mapping = new HashMap<>();
             for (TGD tgd : tgds) {
-
                 List<Trigger> triggers = tgd.getTriggers(incrementInstance);
                 for (Trigger trigger : triggers) {
                     List<RelationalAtom> headAtoms = tgd.getHead();
@@ -194,10 +208,9 @@ public class ChaseAlgorithm {
                         tgd.apply(newlyDerivedSubset, trigger, headAtom);
                     }
                 }
-
-                incrementInstance = Database.copyDatabase(newlyDerivedSubset);
-                database = Database.databaseUnion(database, incrementInstance);
             }
+            incrementInstance = Database.copyDatabase(newlyDerivedSubset);
+            database = Database.databaseUnion(database, incrementInstance);
         }
         System.out.println("最终数据库实例：");
 
@@ -279,13 +292,12 @@ public class ChaseAlgorithm {
                 for (RelationalAtom headAtom : headAtoms) {
                     List<Trigger> equivalentTriggers = tgd.getEquivalentTriggers(triggers, headAtom);
                     for (Trigger equivalentTrigger : equivalentTriggers) {
-                        tgd.apply(database, equivalentTrigger, headAtom);
+                        tgd.apply(newlyDerivedSubset, equivalentTrigger, headAtom);
                     }
                 }
-
-                incrementInstance = Database.copyDatabase(newlyDerivedSubset);
-                database = Database.databaseUnion(database.updateDatabase(mapping), incrementInstance);
             }
+            incrementInstance = Database.copyDatabase(newlyDerivedSubset);
+            database = Database.databaseUnion(database.updateDatabase(mapping), incrementInstance);
         }
         System.out.println("最终数据库实例：");
 
@@ -350,6 +362,72 @@ public class ChaseAlgorithm {
 //            }
 //        } while (changed);
 //    }
+
+    public static Database parallelChase(Database database, List<Constraint> constraints) {
+        Database incrementInstance = new Database();
+
+        for (Table table : database.getTables()) {
+            incrementInstance.addTable(table);
+        }
+
+        int count = 0;
+        while (!incrementInstance.isEmpty()) {
+            Database newlyDerivedSubset = new Database();
+            HashMap<LabeledNull, Value> mapping = new HashMap<>();
+            for (Constraint constraint : constraints) {
+                count++;
+                if (constraint instanceof TGD) {
+                    TGD tgd = (TGD) constraint;
+                    List<Trigger> triggers = tgd.getTriggers(incrementInstance);
+                    for (Trigger trigger : triggers) {
+                        if (tgd.getHead().size() == 1) {
+                            List<RelationalAtom> headAtoms = tgd.getHead();
+                            for (RelationalAtom headAtom : headAtoms) {
+                                if (trigger.checkActive(database, headAtom)) {
+                                    tgd.apply(newlyDerivedSubset, trigger, headAtom);
+                                }
+                            }
+                        } else {
+                            if (trigger.checkActive(database, tgd)) {
+                                tgd.apply(newlyDerivedSubset, trigger);
+                            }
+                        }
+                    }
+                }
+                if (constraint instanceof EGD) {
+                    EGD egd = (EGD) constraint;
+                    if (egd.isSimple()) {
+                        List<EqualAtom> headAtoms = egd.getHead();
+                        for (EqualAtom equalAtom : headAtoms) {
+                            Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+                            mapping = egd.apply(copy.updateDatabase(mapping), equalAtom, mapping);
+
+//                            mapping = egd.apply(Database.databaseUnion(newlyDerivedSubset,database).updateDatabase(mapping), equalAtom, mapping);
+//                            System.out.println("mapping :" + mapping);
+                        }
+                    } else {
+                        List<Trigger> triggers = egd.getTriggers(incrementInstance);
+                        List<EqualAtom> headAtoms = egd.getHead();
+                        for (Trigger trigger : triggers) {
+                            for (EqualAtom equalAtom : headAtoms) {
+                                if (trigger.checkActive(equalAtom)) {
+                                    mapping = egd.apply(trigger, equalAtom, mapping);
+                                    System.out.println("mapping :" + mapping);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Database copy = Database.copyDatabase(Database.databaseUnion(newlyDerivedSubset, database));
+            incrementInstance = Database.databaseDifference(copy.updateDatabase(mapping), database);
+            database = Database.databaseUnion(database.updateDatabase(mapping), incrementInstance);
+        }
+
+//        System.out.println("共检查了" + count + "次依赖关系");
+        return database;
+    }
 }
 
 /*
